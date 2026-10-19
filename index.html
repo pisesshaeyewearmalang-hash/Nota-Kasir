@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cetak Nota Kasir</title>
+  <style>
+    @page {
+      size: 58mm auto;
+      margin: 0;
+    }
+    body {
+      font-family: 'Courier New', Courier, monospace;
+      width: 58mm;
+      max-width: 58mm;
+      margin: 0 auto;
+      padding: 6px 4px;
+      font-size: 11px;
+      line-height: 1.25;
+      color: #000;
+      background: #fff;
+    }
+    .text-center { text-align: center; }
+    .text-right { text-align: right; }
+    .bold { font-weight: bold; }
+    .store-name { font-size: 13px; font-weight: bold; margin-bottom: 2px; }
+    .store-info { font-size: 10px; margin-bottom: 6px; }
+    .divider {
+      border-top: 1px dashed #000;
+      margin: 4px 0;
+    }
+    .meta-table, .item-table, .total-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .meta-table td {
+      font-size: 10.5px;
+      vertical-align: top;
+      padding: 1px 0;
+    }
+    .meta-table td:first-child { width: 32%; }
+    .meta-table td:nth-child(2) { width: 4%; }
+    .item-table th {
+      font-size: 10px;
+      padding: 2px 0;
+      border-bottom: 1px dashed #000;
+    }
+    .item-table td {
+      font-size: 10.5px;
+      padding: 2px 0;
+      vertical-align: top;
+    }
+    .total-table td {
+      font-size: 11px;
+      padding: 1.5px 0;
+    }
+    .footer {
+      margin-top: 8px;
+      font-size: 10px;
+      text-align: center;
+    }
+    @media print {
+      body { width: 100%; padding: 0; }
+      .no-print { display: none !important; }
+    }
+    .btn-print {
+      display: block;
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <button class="btn-print no-print" onclick="window.print()">🖨️ CETAK NOTA</button>
+
+  <div class="text-center">
+    <div class="store-name" id="namaToko">PISSSHA EYEWEAR</div>
+    <div class="store-info" id="alamatToko">Jl. Gajayana No.1a, Lowokwaru, Malang</div>
+    <div class="store-info" id="telpToko">0813-3439-7993</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <table class="meta-table">
+    <tr>
+      <td>No. Nota</td>
+      <td>:</td>
+      <td id="noNota">-</td>
+    </tr>
+    <tr>
+      <td>Tanggal</td>
+      <td>:</td>
+      <td id="tanggal">-</td>
+    </tr>
+    <tr>
+      <td>Pelanggan</td>
+      <td>:</td>
+      <td id="namaCust">-</td>
+    </tr>
+    <tr>
+      <td>No. Telp</td>
+      <td>:</td>
+      <td id="telpCust">-</td>
+    </tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <table class="item-table">
+    <thead>
+      <tr>
+        <th align="left">Item</th>
+        <th align="center" style="width: 15%;">Qty</th>
+        <th align="right" style="width: 45%;">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody id="itemList">
+      <!-- Item dinamis -->
+    </tbody>
+  </table>
+
+  <div class="divider"></div>
+
+  <table class="total-table">
+    <tr>
+      <td class="bold">Total Belanja</td>
+      <td align="right" class="bold" id="totalBelanja">Rp 0</td>
+    </tr>
+    <tr>
+      <td id="labelBayar">Bayar</td>
+      <td align="right" id="nominalBayar">Rp 0</td>
+    </tr>
+    <tr id="rowKembali" style="display:none;">
+      <td>Kembalian</td>
+      <td align="right" id="kembalian">Rp 0</td>
+    </tr>
+    <tr id="rowSisa" style="display:none;">
+      <td class="bold">SISA (DP)</td>
+      <td align="right" class="bold" id="sisa">Rp 0</td>
+    </tr>
+  </table>
+
+  <div class="divider"></div>
+
+  <div class="footer">
+    TERIMA KASIH ATAS KUNJUNGAN ANDA
+  </div>
+
+  <script>
+    function formatRupiah(num) {
+      return "Rp " + Number(num || 0).toLocaleString("id-ID");
+    }
+
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.get("nama_toko")) document.getElementById("namaToko").innerText = params.get("nama_toko");
+    if (params.get("alamat_toko")) document.getElementById("alamatToko").innerText = params.get("alamat_toko");
+    if (params.get("telp_toko")) document.getElementById("telpToko").innerText = params.get("telp_toko");
+    if (params.get("id_transaksi")) document.getElementById("noNota").innerText = params.get("id_transaksi");
+    if (params.get("tanggal")) document.getElementById("tanggal").innerText = params.get("tanggal");
+    if (params.get("nama_cust")) document.getElementById("namaCust").innerText = params.get("nama_cust");
+    if (params.get("telp_cust")) document.getElementById("telpCust").innerText = params.get("telp_cust");
+
+    const metode = params.get("metode_bayar") || "Tunai";
+    document.getElementById("labelBayar").innerText = metode;
+
+    const itemsStr = params.get("nama_produk") || "";
+    const qtyStr = params.get("qty") || "";
+    const subStr = params.get("sub_total") || "";
+
+    const items = itemsStr ? itemsStr.split(",") : [];
+    const qtys = qtyStr ? qtyStr.split(",") : [];
+    const subtotals = subStr ? subStr.split(",") : [];
+
+    const itemListEl = document.getElementById("itemList");
+    itemListEl.innerHTML = "";
+
+    for (let i = 0; i < items.length; i++) {
+      const name = items[i] ? items[i].trim() : "-";
+      const q = qtys[i] ? qtys[i].trim() : "1";
+      const sub = subtotals[i] ? subtotals[i].trim() : "0";
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="word-break: break-word;">${name}</td>
+        <td align="center">${q}</td>
+        <td align="right">${formatRupiah(sub)}</td>
+      `;
+      itemListEl.appendChild(tr);
+    }
+
+    const total = parseFloat(params.get("total") || "0");
+    const bayar = parseFloat(params.get("tunai") || "0");
+    const sisa = parseFloat(params.get("sisa") || "0");
+    const kembali = parseFloat(params.get("kembali") || "0");
+
+    document.getElementById("totalBelanja").innerText = formatRupiah(total);
+    document.getElementById("nominalBayar").innerText = formatRupiah(bayar);
+
+    if (sisa > 0) {
+      document.getElementById("rowSisa").style.display = "";
+      document.getElementById("sisa").innerText = formatRupiah(sisa);
+    } else if (kembali > 0) {
+      document.getElementById("rowKembali").style.display = "";
+      document.getElementById("kembalian").innerText = formatRupiah(kembali);
+    }
+
+    window.onload = function() {
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    };
+  </script>
+</body>
+</html>
